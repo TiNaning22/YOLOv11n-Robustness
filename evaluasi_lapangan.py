@@ -16,7 +16,6 @@ from ultralytics import YOLO
 # ──────────────────────────────────────────
 #  KONFIGURASI — SESUAIKAN PATH INI
 # ──────────────────────────────────────────
-# DRIVE_ROOT        = "/content/drive/MyDrive"
 MODEL_PATH        = "yolov11n_baseline2/weights/best.pt"
 FIELD_ANNOT_DIR   = "dataset_lapangan"
 SYNTHETIC_CSV     = "hasil_evaluasi/robustness_results_v2.csv"
@@ -25,7 +24,6 @@ IMG_SIZE          = 640
  
 # Confidence threshold optimal dari F1 curve terbaru
 CONF_THRESHOLD    = 0.01
-# CONF_THRESHOLD    = 0.5
  
 # Baseline referensi dari training terbaru
 BASELINE_MAP50    = 0.94
@@ -39,34 +37,24 @@ CLASS_NAMES = [
     "Narrow Brown Spot",
 ]
  
-# AP per kelas baseline (dari PR Curve training terbaru)
-BASELINE_AP_PER_CLASS = {
-    "Healthy":          0.973,
-    "Brown Spot":       0.856,
-    "Leaf Blast":       0.863,
-    "Leaf Blight":      0.995,
-    "Leaf Scald":       0.995,
-    "Narrow Brown Spot":0.994,
-}
- 
 # Definisi kondisi lapangan + skenario sintetis padanannya
 FIELD_CONDITIONS = {
     "L1": {
         "name":          "Pagi Hari (07.00–08.00)",
-        "analogy":       ["S1", "S6"],
-        "analogy_label": "S1 (Underexposure Ringan) + S6 (Brightness Rendah)",
+        "analogy":       ["S3", "S6"],
+        "analogy_label": "S3 (Underexposure Ringan) + S6 (Brightness Rendah)",
         "karakteristik": "Cahaya rendah-sedang, suhu warna dingin, sudut rendah",
     },
     "L2": {
         "name":          "Siang Hari (11.00–13.00)",
-        "analogy":       ["S3", "S7"],
-        "analogy_label": "S3 (Overexposure Ringan) + S7 (Brightness Tinggi)",
+        "analogy":       ["S1", "S7"],
+        "analogy_label": "S1 (Overexposure Ringan) + S7 (Brightness Tinggi)",
         "karakteristik": "Cahaya tinggi, bayangan minimal, kontras tinggi",
     },
     "L3": {
         "name":          "Sore Hari (15.00–17.00)",
-        "analogy":       ["S1", "S6"],
-        "analogy_label": "S1 (Underexposure Ringan) + S6 (Brightness Rendah)",
+        "analogy":       ["S9", "S7"],
+        "analogy_label": "S9 (Saturation Tinggi) + S7 (Brightness Tinggi)",
         "karakteristik": "Cahaya rendah-sedang, suhu warna hangat, sudut rendah",
     },
     "L4": {
@@ -105,10 +93,6 @@ def create_field_yaml(condition_code: str, field_annot_dir: str) -> str:
 # ──────────────────────────────────────────
  
 def check_field_data(field_annot_dir: str) -> dict:
-    """
-    Cek kelengkapan folder dan label untuk setiap kondisi lapangan.
-    Kembalikan dict status per kondisi.
-    """
     status = {}
     print(f"\n{'='*55}")
     print(f"  Cek Kelengkapan Data Lapangan")
@@ -246,13 +230,6 @@ def compute_comparison(
     synthetic_results: dict,
     baseline_map50: float,
 ) -> list:
-    """
-    Untuk setiap kondisi lapangan Lx hitung:
-    - Drop vs Baseline (%)
-    - Rata-rata mAP50 skenario sintetis padanan
-    - Gap (%) antara lapangan dan sintetis padanan
-    - Interpretasi keterwakilan sintetis
-    """
     comparison = []
  
     for fr in field_results:
@@ -280,8 +257,6 @@ def compute_comparison(
         )
  
         # Gap lapangan vs sintetis
-        # positif = lapangan lebih buruk dari sintetis
-        # negatif = lapangan lebih baik dari sintetis
         gap_pct = round(
             ((avg_synth_map50 - fr["map50"]) / avg_synth_map50 * 100)
             if avg_synth_map50 else 0.0, 2
@@ -625,68 +600,6 @@ def plot_radar_chart(
  
  
 # ──────────────────────────────────────────
-#  GRAFIK 4: AP per Kelas — Lapangan vs Baseline
-# ──────────────────────────────────────────
- 
-def plot_ap_per_class_field(field_results: list, output_path: str):
-    """
-    Grouped bar: AP tiap kelas di kondisi lapangan L1-L4
-    dibandingkan AP baseline.
-    """
-    # Cek apakah ada data AP per kelas
-    has_data = any(
-        r.get("ap_per_class") and any(v > 0 for v in r["ap_per_class"].values())
-        for r in field_results
-    )
-    if not has_data:
-        print("[INFO] Data AP per kelas lapangan tidak tersedia, plot 4 dilewati.")
-        return
- 
-    x      = np.arange(len(CLASS_NAMES))
-    width  = 0.15
-    lcolors_map = {
-        "L1": "#e74c3c", "L2": "#e67e22",
-        "L3": "#9b59b6", "L4": "#1abc9c"
-    }
- 
-    fig, ax = plt.subplots(figsize=(14, 6))
-    ax.set_title(
-        "AP per Kelas: Kondisi Lapangan vs Baseline\n"
-        "YOLOv11n — Deteksi Penyakit Daun Padi",
-        fontsize=12, fontweight="bold"
-    )
- 
-    # Baseline AP per kelas
-    baseline_vals = [BASELINE_AP_PER_CLASS.get(n, 0) for n in CLASS_NAMES]
-    offset_base   = -(len(field_results)/2) * width
-    ax.bar(x + offset_base, baseline_vals, width,
-           label="S0 Baseline", color="#2ecc71",
-           edgecolor="white", linewidth=0.5, alpha=0.85)
- 
-    # AP per kondisi lapangan
-    for i, fr in enumerate(field_results):
-        ap_dict = fr.get("ap_per_class", {})
-        vals    = [ap_dict.get(n, 0) for n in CLASS_NAMES]
-        offset  = (-(len(field_results)/2) + i + 1) * width
-        ax.bar(x + offset, vals, width,
-               label=f"{fr['code']} {fr['name'][:12]}",
-               color=lcolors_map.get(fr["code"], "#888"),
-               edgecolor="white", linewidth=0.5, alpha=0.85)
- 
-    ax.set_xticks(x)
-    ax.set_xticklabels(CLASS_NAMES, rotation=15, ha="right", fontsize=9)
-    ax.set_ylabel("Average Precision (AP@0.5)")
-    ax.set_ylim(0, 1.1)
-    ax.legend(fontsize=8, loc="lower right", ncol=3)
-    ax.axhline(y=0, color="gray", linewidth=0.5)
- 
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    plt.close()
-    print(f"[INFO] Plot 4 disimpan: {output_path}")
- 
- 
-# ──────────────────────────────────────────
 #  SIMPAN RINGKASAN TEKS
 # ──────────────────────────────────────────
  
@@ -700,13 +613,6 @@ def save_summary_txt(comparison: list, baseline_map50: float, output_path: str):
         "",
         f"  Baseline mAP@0.5 (S0) : {baseline_map50:.4f}",
         f"  Confidence threshold   : {CONF_THRESHOLD}",
-        "",
-        "  AP per kelas baseline (S0):",
-    ]
-    for name, ap in BASELINE_AP_PER_CLASS.items():
-        lines.append(f"    {name:<22}: {ap:.3f}")
- 
-    lines += [
         "",
         "  Hasil kondisi lapangan:",
         "  " + "─" * 60,
@@ -833,9 +739,6 @@ def main():
     plot_radar_chart(
         field_results, comparison, synthetic_results,
         str(out / "plot3_radar_chart.png")
-    )
-    plot_ap_per_class_field(
-        field_results, str(out / "plot4_ap_per_class_field.png")
     )
  
     print(f"\n{'='*60}")

@@ -11,10 +11,10 @@ OUTPUT_DIR    = "dataset_lighting"      # Folder output skenario
  
 SCENARIOS = {
     "S0":  {"name": "Normal (Baseline)",        "type": "baseline"},
-    "S1":  {"name": "Underexposure Ringan",     "type": "gamma",      "gamma": 1.5},
-    "S2":  {"name": "Underexposure Berat",      "type": "gamma",      "gamma": 2.5},
-    "S3":  {"name": "Overexposure Ringan",      "type": "gamma",      "gamma": 0.6},
-    "S4":  {"name": "Overexposure Berat",       "type": "gamma",      "gamma": 0.3},
+    "S1":  {"name": "Overexposure Ringan",      "type": "gamma",      "gamma": 1.5},
+    "S2":  {"name": "Overexposure Berat",       "type": "gamma",      "gamma": 2.5},
+    "S3":  {"name": "Underexposure Ringan",     "type": "gamma",      "gamma": 0.6},
+    "S4":  {"name": "Underexposure Berat",      "type": "gamma",      "gamma": 0.3},
     "S5":  {"name": "Bayangan Parsial",         "type": "shadow",     "ratio": 0.5, "darken": 0.4},
     "S6":  {"name": "Brightness Rendah",        "type": "brightness", "beta": -40},
     "S7":  {"name": "Brightness Tinggi",        "type": "brightness", "beta":  40},
@@ -31,11 +31,6 @@ def apply_baseline(img: np.ndarray) -> np.ndarray:
  
  
 def apply_gamma(img: np.ndarray, gamma: float) -> np.ndarray:
-    """
-    S1-S4: Gamma Correction.
-    γ > 1  → gambar lebih gelap  (underexposure)
-    γ < 1  → gambar lebih terang (overexposure)
-    """
     inv_gamma = 1.0 / gamma
     # Buat lookup table agar proses cepat
     table = np.array([

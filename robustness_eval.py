@@ -23,25 +23,26 @@ RESULTS_DIR   = "hasil_evaluasi"
 IMG_SIZE      = 640
  
 # Confidence threshold optimal dari F1 curve terbaru
-CONF_THRESHOLD = 0.5
+CONF_THRESHOLD = 0.489
 CLASS_NAMES = ['bacterial_leaf_blight', 'brown_spot', 'healthy', 'leaf_blast', 'leaf_scald', 'narrow_brown']
+
  
 # AP per kelas dari PR Curve (baseline referensi untuk analisis)
 BASELINE_AP_PER_CLASS = {
-    "Healthy":          0.990,
-    "Brown Spot":       0.532,
-    "Leaf Blast":       0.696,
-    "Leaf Blight":      0.718,
-    "Leaf Scald":       0.882,
-    "Narrow Brown Spot":0.487,
+    "Healthy":          0.973,
+    "Brown Spot":       0.856,
+    "Leaf Blast":       0.863,
+    "Leaf Blight":      0.995,
+    "Leaf Scald":       0.995,
+    "Narrow Brown Spot":0.994,
 }
  
 SCENARIO_NAMES = {
     "S0":  "Normal (Baseline)",
-    "S1":  "Underexposure Ringan (γ=1.5)",
-    "S2":  "Underexposure Berat (γ=2.5)",
-    "S3":  "Overexposure Ringan (γ=0.6)",
-    "S4":  "Overexposure Berat (γ=0.3)",
+    "S1":  "Overexposure Ringan (γ=1.5)",
+    "S2":  "Overexposure Berat (γ=2.5)",
+    "S3":  "Underexposure Ringan (γ=0.6)",
+    "S4":  "Underexposure Berat (γ=0.3)",
     "S5":  "Bayangan Parsial",
     "S6":  "Brightness Rendah (β=-40)",
     "S7":  "Brightness Tinggi (β=+40)",
@@ -55,8 +56,8 @@ SCENARIO_ORDER = ["S0","S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11"]
  
 # Pengelompokan skenario untuk analisis
 SCENARIO_GROUPS = {
-    "Underexposure": ["S1", "S2"],
-    "Overexposure":  ["S3", "S4"],
+    "Overexposure": ["S1", "S2"],
+    "Underexposure":  ["S3", "S4"],
     "Bayangan":      ["S5"],
     "Brightness":    ["S6", "S7"],
     "Saturation":    ["S8", "S9"],

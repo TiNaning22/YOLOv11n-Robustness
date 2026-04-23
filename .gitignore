@@ -59,6 +59,7 @@ yolov11n_baseline3/
 results_robustness/
 dataset_lapangan/
 lapangan/
+hasil_evaluasi/
 
 # Translations
 *.mo
