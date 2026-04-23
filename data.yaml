@@ -1,0 +1,12 @@
+names:
+- Healthy
+- Brown Spot
+- Leaf Blast
+- Leaf Blight
+- Leaf Scald
+- Narrow Brown Spot
+nc: 6
+path: E:\Skripsi\Robustness YOLO11n\dataset
+test: test/images
+train: train/images
+val: valid/images

@@ -5,17 +5,10 @@ import shutil
 from pathlib import Path
  
  
-# ──────────────────────────────────────────
-#  KONFIGURASI PATH
-# ──────────────────────────────────────────
 SOURCE_IMAGES = "dataset/test/images"   # Ganti sesuai path dataset Anda
 SOURCE_LABELS = "dataset/test/labels"   # Ganti sesuai path dataset Anda
 OUTPUT_DIR    = "dataset_lighting"      # Folder output skenario
  
- 
-# ──────────────────────────────────────────
-#  DEFINISI SKENARIO PENCAHAYAAN
-# ──────────────────────────────────────────
 SCENARIOS = {
     "S0":  {"name": "Normal (Baseline)",        "type": "baseline"},
     "S1":  {"name": "Underexposure Ringan",     "type": "gamma",      "gamma": 1.5},
@@ -31,10 +24,6 @@ SCENARIOS = {
     "S11": {"name": "Exposure Tinggi",          "type": "exposure",   "alpha": 1.3},
 }
  
- 
-# ──────────────────────────────────────────
-#  FUNGSI TRANSFORMASI
-# ──────────────────────────────────────────
  
 def apply_baseline(img: np.ndarray) -> np.ndarray:
     """S0 - Tanpa transformasi."""
@@ -119,11 +108,7 @@ def transform_image(img: np.ndarray, scenario_cfg: dict) -> np.ndarray:
     else:
         raise ValueError(f"Tipe skenario tidak dikenal: {t}")
  
- 
-# ──────────────────────────────────────────
-#  FUNGSI UTAMA
-# ──────────────────────────────────────────
- 
+
 def generate_lighting_dataset(
     src_images: str,
     src_labels: str,
@@ -186,11 +171,7 @@ def generate_lighting_dataset(
     print(f"  Output tersimpan di: {output_dir.resolve()}")
     print("="*55)
  
- 
-# ──────────────────────────────────────────
-#  PREVIEW (OPSIONAL) - Simpan grid preview
-# ──────────────────────────────────────────
- 
+
 def save_preview_grid(sample_image_path: str, output_dir: str, scenarios: dict):
     """
     Buat satu gambar grid yang menampilkan semua skenario
@@ -233,11 +214,6 @@ def save_preview_grid(sample_image_path: str, output_dir: str, scenarios: dict):
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(out_path), grid)
     print(f"\n[Preview] Grid disimpan: {out_path.resolve()}")
- 
- 
-# ──────────────────────────────────────────
-#  ENTRY POINT
-# ──────────────────────────────────────────
  
 if __name__ == "__main__":
     # 1. Generate seluruh skenario pencahayaan

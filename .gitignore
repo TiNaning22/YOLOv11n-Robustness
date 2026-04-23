@@ -23,6 +23,7 @@ sdist/
 var/
 wheels/
 share/python-wheels/
+runs/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -52,6 +53,12 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+yolov11n_baseline/
+yolov11n_baseline2/
+yolov11n_baseline3/
+results_robustness/
+dataset_lapangan/
+lapangan/
 
 # Translations
 *.mo
