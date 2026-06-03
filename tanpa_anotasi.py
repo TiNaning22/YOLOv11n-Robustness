@@ -21,7 +21,7 @@ MODEL_PATH    = "yolov11n_baseline2/weights/best.pt"
 FIELD_DIR     = "lapangan"   # folder foto lapangan
 OUTPUT_DIR    = "hasil_evaluasi/field_qualitative"
 IMG_SIZE      = 640
-CONF_THRESHOLD = 0.2  # optimal dari F1 curve terbaru
+CONF_THRESHOLD = 0.498  # optimal dari F1 curve terbaru
  
 CLASS_NAMES = [
     "healthy",

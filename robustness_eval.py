@@ -12,22 +12,15 @@ import matplotlib.patches as mpatches
 from pathlib import Path
 from ultralytics import YOLO
  
- 
-# ──────────────────────────────────────────
-#  KONFIGURASI — SESUAIKAN PATH INI
-# ──────────────────────────────────────────
-# DRIVE_ROOT    = "/content/drive/MyDrive"
+
 MODEL_PATH    = "yolov11n_baseline2/weights/best.pt"
 LIGHTING_DIR  = "dataset_lighting"
 RESULTS_DIR   = "hasil_evaluasi"
 IMG_SIZE      = 640
- 
-# Confidence threshold optimal dari F1 curve terbaru
+
 CONF_THRESHOLD = 0.489
 CLASS_NAMES = ['bacterial_leaf_blight', 'brown_spot', 'healthy', 'leaf_blast', 'leaf_scald', 'narrow_brown']
 
- 
-# AP per kelas dari PR Curve (baseline referensi untuk analisis)
 BASELINE_AP_PER_CLASS = {
     "Healthy":          0.973,
     "Brown Spot":       0.856,
@@ -53,8 +46,7 @@ SCENARIO_NAMES = {
 }
  
 SCENARIO_ORDER = ["S0","S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11"]
- 
-# Pengelompokan skenario untuk analisis
+
 SCENARIO_GROUPS = {
     "Overexposure": ["S1", "S2"],
     "Underexposure":  ["S3", "S4"],
@@ -63,12 +55,6 @@ SCENARIO_GROUPS = {
     "Saturation":    ["S8", "S9"],
     "Exposure":      ["S10", "S11"],
 }
- 
- 
-# ──────────────────────────────────────────
-#  BUAT data.yaml SEMENTARA PER SKENARIO
-# ──────────────────────────────────────────
- 
 def create_scenario_yaml(scenario_code: str, lighting_dir: str) -> str:
     scenario_path = Path(lighting_dir) / scenario_code
     yaml_path     = scenario_path / "data.yaml"
@@ -83,12 +69,6 @@ def create_scenario_yaml(scenario_code: str, lighting_dir: str) -> str:
     with open(yaml_path, "w") as f:
         yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
     return str(yaml_path)
- 
- 
-# ──────────────────────────────────────────
-#  EVALUASI SATU SKENARIO
-# ──────────────────────────────────────────
- 
 def evaluate_scenario(
     model: YOLO,
     scenario_code: str,
@@ -116,8 +96,7 @@ def evaluate_scenario(
     p  = metrics.box.mp
     r  = metrics.box.mr
     f1 = (2 * p * r / (p + r)) if (p + r) > 0 else 0.0
- 
-    # AP per kelas jika tersedia
+
     ap_per_class = {}
     if hasattr(metrics.box, "ap_class_index") and hasattr(metrics.box, "ap"):
         for i, cls_idx in enumerate(metrics.box.ap_class_index):
@@ -134,12 +113,7 @@ def evaluate_scenario(
         "map5095":      round(metrics.box.map,   4),
         "ap_per_class": ap_per_class,
     }
- 
- 
-# ──────────────────────────────────────────
-#  HITUNG PENURUNAN PERFORMA
-# ──────────────────────────────────────────
- 
+
 def compute_drop(results: list) -> list:
     baseline = next((r for r in results if r["code"] == "S0"), None)
     if not baseline:
@@ -150,8 +124,7 @@ def compute_drop(results: list) -> list:
     for r in results:
         delta    = round(b_map50 - r["map50"], 4)
         drop_pct = round((delta / b_map50) * 100, 2) if b_map50 > 0 else 0.0
- 
-        # Kategori ketahanan
+
         if abs(drop_pct) <= 5:
             robustness = "Sangat Tahan"
         elif abs(drop_pct) <= 15:
@@ -164,8 +137,6 @@ def compute_drop(results: list) -> list:
         out.append({**r, "delta_map50": delta,
                     "drop_pct": drop_pct, "robustness": robustness})
     return out
- 
-
 def save_csv(data: list, output_path: str):
     fieldnames = [
         "code", "name", "precision", "recall", "f1",
@@ -176,8 +147,6 @@ def save_csv(data: list, output_path: str):
         writer.writeheader()
         writer.writerows(data)
     print(f"[INFO] CSV disimpan: {output_path}")
- 
-
 def print_results_table(data: list):
     header = (
         f"{'Kode':<5} {'Skenario':<35} "
@@ -200,8 +169,7 @@ def print_results_table(data: list):
             f"  {r.get('robustness','')}{flag}"
         )
     print(sep)
- 
-    # Ringkasan
+
     non_baseline = [r for r in data if r["code"] != "S0"]
     if non_baseline:
         worst = max(non_baseline, key=lambda x: x["drop_pct"])
@@ -211,8 +179,6 @@ def print_results_table(data: list):
         print(f"  Rata-rata Drop        : {avg_drop:.2f}%")
         print(f"  Penurunan terbesar    : {worst['code']} — {worst['name']} ({worst['drop_pct']:.2f}%)")
         print(f"  Penurunan terkecil    : {best['code']}  — {best['name']}  ({best['drop_pct']:.2f}%)")
- 
- 
 def plot_map50_per_scenario(data: list, output_path: str):
     codes    = [r["code"]  for r in data]
     map50    = [r["map50"] for r in data]
@@ -265,12 +231,7 @@ def plot_map50_per_scenario(data: list, output_path: str):
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"[INFO] Plot 1 disimpan: {output_path}")
- 
- 
-# ──────────────────────────────────────────
-#  GRAFIK 2: Drop% per Skenario
-# ──────────────────────────────────────────
- 
+
 def plot_drop_pct(data: list, output_path: str):
     non_baseline = [r for r in data if r["code"] != "S0"]
     codes    = [r["code"]     for r in non_baseline]
@@ -314,12 +275,7 @@ def plot_drop_pct(data: list, output_path: str):
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"[INFO] Plot 2 disimpan: {output_path}")
- 
- 
-# ──────────────────────────────────────────
-#  GRAFIK 3: Heatmap Metrik per Skenario
-# ──────────────────────────────────────────
- 
+
 def plot_metrics_heatmap(data: list, output_path: str):
     metrics_keys   = ["precision", "recall", "f1", "map50", "map5095"]
     metrics_labels = ["Precision", "Recall", "F1-Score", "mAP@0.5", "mAP@0.5:0.95"]
@@ -356,11 +312,6 @@ def plot_metrics_heatmap(data: list, output_path: str):
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"[INFO] Plot 3 disimpan: {output_path}")
- 
- 
-# ──────────────────────────────────────────
-#  GRAFIK 4: AP per Kelas per Skenario
-# ──────────────────────────────────────────
  
 def plot_ap_per_class(data: list, output_path: str):
     """Grouped bar: AP tiap kelas di setiap skenario."""
@@ -407,12 +358,7 @@ def plot_ap_per_class(data: list, output_path: str):
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"[INFO] Plot 4 disimpan: {output_path}")
- 
- 
-# ──────────────────────────────────────────
-#  SIMPAN RINGKASAN TEKS
-# ──────────────────────────────────────────
- 
+
 def save_summary_txt(data: list, output_path: str):
     lines = [
         f"  Model        : YOLOv11n",
@@ -446,12 +392,7 @@ def save_summary_txt(data: list, output_path: str):
     lines += ["", "=" * 65]
     Path(output_path).write_text("\n".join(lines), encoding="utf-8")
     print(f"[INFO] Ringkasan disimpan: {output_path}")
- 
- 
-# ──────────────────────────────────────────
-#  ENTRY POINT
-# ──────────────────────────────────────────
- 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Evaluasi ketahanan YOLOv11n v2 (post-oversampling)"
@@ -477,8 +418,7 @@ def main():
     # Muat model
     model = YOLO(args.model)
     print(f"[INFO] Model dimuat. Kelas: {list(model.names.values())}\n")
- 
-    # ── Evaluasi semua skenario ──────────────────────────
+
     raw_results = []
     for code in SCENARIO_ORDER:
         print(f"  [{code}] {SCENARIO_NAMES.get(code, '')} ...", end=" ", flush=True)
@@ -499,16 +439,10 @@ def main():
         print("\n[ERROR] Tidak ada skenario yang berhasil dievaluasi.")
         print("        Pastikan lighting_simulation.py sudah dijalankan.")
         return
- 
-    # ── Hitung drop ──────────────────────────────────────
+
     final_results = compute_drop(raw_results)
- 
-    # ── Tampilkan tabel ──────────────────────────────────
     print_results_table(final_results)
- 
-    # ── Simpan output ────────────────────────────────────
     out = Path(args.output)
- 
     save_csv(
         final_results,
         str(out / "robustness_results_v2.csv")
@@ -538,7 +472,6 @@ def main():
     print(f"  SELESAI — Semua output tersimpan di:")
     print(f"  {out.resolve()}")
     print(f"{'='*60}\n")
- 
  
 if __name__ == "__main__":
     main()

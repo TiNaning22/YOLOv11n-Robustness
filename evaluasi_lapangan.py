@@ -12,20 +12,14 @@ import matplotlib.ticker as mticker
 from pathlib import Path
 from ultralytics import YOLO
  
- 
-# ──────────────────────────────────────────
-#  KONFIGURASI — SESUAIKAN PATH INI
-# ──────────────────────────────────────────
-MODEL_PATH        = "yolov11n_baseline2/weights/best.pt"
-FIELD_ANNOT_DIR   = "dataset_lapangan"
+MODEL_PATH        = "yolov11n_baseline3/weights/best.pt"
+FIELD_ANNOT_DIR   = "dataset_lapangan(2)"
 SYNTHETIC_CSV     = "hasil_evaluasi/robustness_results_v2.csv"
 OUTPUT_DIR        = "hasil_evaluasi/lapangan/field_comparison_v2"
 IMG_SIZE          = 640
  
-# Confidence threshold optimal dari F1 curve terbaru
-CONF_THRESHOLD    = 0.01
- 
-# Baseline referensi dari training terbaru
+CONF_THRESHOLD = 0.5
+
 BASELINE_MAP50    = 0.94
  
 CLASS_NAMES = [
@@ -36,8 +30,7 @@ CLASS_NAMES = [
     "Leaf Scald",
     "Narrow Brown Spot",
 ]
- 
-# Definisi kondisi lapangan + skenario sintetis padanannya
+
 FIELD_CONDITIONS = {
     "L1": {
         "name":          "Pagi Hari (07.00–08.00)",
@@ -66,12 +59,7 @@ FIELD_CONDITIONS = {
 }
  
 FIELD_ORDER = ["L1", "L2", "L3", "L4"]
- 
- 
-# ──────────────────────────────────────────
-#  BUAT data.yaml SEMENTARA PER KONDISI
-# ──────────────────────────────────────────
- 
+
 def create_field_yaml(condition_code: str, field_annot_dir: str) -> str:
     cond_path = Path(field_annot_dir) / condition_code
     yaml_path = cond_path / "data.yaml"
@@ -86,11 +74,6 @@ def create_field_yaml(condition_code: str, field_annot_dir: str) -> str:
     with open(yaml_path, "w") as f:
         yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
     return str(yaml_path)
- 
- 
-# ──────────────────────────────────────────
-#  CEK KELENGKAPAN DATA LAPANGAN
-# ──────────────────────────────────────────
  
 def check_field_data(field_annot_dir: str) -> dict:
     status = {}
@@ -128,11 +111,6 @@ def check_field_data(field_annot_dir: str) -> dict:
  
     print(f"{'='*55}\n")
     return status
- 
- 
-# ──────────────────────────────────────────
-#  EVALUASI SATU KONDISI LAPANGAN
-# ──────────────────────────────────────────
  
 def evaluate_field_condition(
     model: YOLO,
@@ -190,11 +168,6 @@ def evaluate_field_condition(
         "ap_per_class": ap_per_class,
     }
  
- 
-# ──────────────────────────────────────────
-#  BACA HASIL SINTETIS DARI CSV
-# ──────────────────────────────────────────
- 
 def load_synthetic_results(csv_path: str) -> dict:
     results = {}
     if not Path(csv_path).exists():
@@ -220,11 +193,6 @@ def load_synthetic_results(csv_path: str) -> dict:
     print(f"[INFO] Data sintetis dimuat: {len(results)} skenario dari {csv_path}")
     return results
  
- 
-# ──────────────────────────────────────────
-#  HITUNG GAP LAPANGAN vs SINTETIS
-# ──────────────────────────────────────────
- 
 def compute_comparison(
     field_results: list,
     synthetic_results: dict,
@@ -243,7 +211,7 @@ def compute_comparison(
             for s in analogies if s in synthetic_results
         ]
         avg_synth_map50 = round(np.mean(analogy_maps), 4) if analogy_maps else None
- 
+        
         # Drop lapangan vs baseline
         field_drop = round(
             ((baseline_map50 - fr["map50"]) / baseline_map50 * 100)
